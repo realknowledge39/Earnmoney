@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Watch & Earn</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 text-gray-900">
@@ -15,10 +16,10 @@
   </header>
 
   <main class="flex flex-col items-center py-10">
-    <iframe id="player" class="rounded shadow-lg" width="800" height="450" allow="autoplay" allowfullscreen></iframe>
+    <div id="player-container" class="rounded shadow-lg w-full max-w-4xl aspect-video"></div>
 
     <div class="mt-6 flex space-x-4">
-      <button onclick="playNextVideo(true)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Next</button>
+      <button onclick="skipVideo()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Next</button>
       <a href="https://www.youtube.com/channel/UC" target="_blank" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow">Subscribe</a>
     </div>
 
@@ -32,37 +33,57 @@
 
   <script>
     const videos = [
-      "Ria5YlK2Afo",
-      "aLFMkJaURUI",
-      "hjGgK935eaA",
-      "vr70Upcgl2k",
-      "TbvZ7BfhKoE",
-      "rdwoNFwkRF0",
-      "BsyY02ioWrI",
-      "xjxkMiK4igk",
-      "8OEAtVMCJUU",
-      "UYqnKDBvYFo"
+      "Ria5YlK2Afo", "aLFMkJaURUI", "hjGgK935eaA", "vr70Upcgl2k",
+      "TbvZ7BfhKoE", "rdwoNFwkRF0", "BsyY02ioWrI", "xjxkMiK4igk",
+      "8OEAtVMCJUU", "UYqnKDBvYFo"
     ];
-
-    let current = 0;
+    let currentIndex = 0;
+    let player;
     let credits = 0;
-    let watching = false;
-    const wallet = document.getElementById("wallet");
-    const player = document.getElementById("player");
 
     function updateWallet() {
-      wallet.textContent = `Wallet: ₹${credits}`;
+      document.getElementById("wallet").textContent = `Wallet: ₹${credits}`;
     }
 
-    function playNextVideo(skipped = false) {
-      if (watching && !skipped) {
+    function onYouTubeIframeAPIReady() {
+      loadVideo();
+    }
+
+    function loadVideo() {
+      const videoId = videos[currentIndex];
+      if (player) {
+        player.loadVideoById(videoId);
+      } else {
+        player = new YT.Player('player-container', {
+          videoId: videoId,
+          playerVars: {
+            autoplay: 1,
+            mute: 1,
+            rel: 0
+          },
+          events: {
+            onStateChange: onPlayerStateChange
+          }
+        });
+      }
+    }
+
+    function onPlayerStateChange(event) {
+      // 0 means ended
+      if (event.data === YT.PlayerState.ENDED) {
         credits += 2;
         updateWallet();
+        nextVideo(); // auto move to next
       }
-      watching = true;
-      const videoId = videos[current];
-      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0`;
-      current = (current + 1) % videos.length;
+    }
+
+    function skipVideo() {
+      nextVideo(); // move to next video but no credits
+    }
+
+    function nextVideo() {
+      currentIndex = (currentIndex + 1) % videos.length;
+      loadVideo();
     }
 
     function withdrawCredits() {
@@ -83,9 +104,6 @@
       credits = 0;
       updateWallet();
     }
-
-    // Start the first video
-    playNextVideo();
   </script>
 </body>
 </html>
