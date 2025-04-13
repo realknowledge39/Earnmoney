@@ -2,108 +2,116 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Watch & Earn</title>
-  <script src="https://www.youtube.com/iframe_api"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>100 YouTube Screen Simulation</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      text-align: center;
+    }
+
+    header {
+      padding: 20px;
+      background-color: #1e3a8a;
+      color: white;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 0 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #2563eb;
+      color: white;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 10px;
+      padding: 20px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 180px;
+      border: none;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <header class="flex justify-between items-center px-6 py-4 bg-white shadow-md">
-    <h1 class="text-2xl font-bold text-blue-600">Watch & Earn</h1>
-    <div class="flex items-center space-x-4">
-      <div class="bg-green-100 text-green-800 px-3 py-1 rounded shadow" id="wallet">Wallet: ₹0</div>
-    </div>
+<body>
+
+  <header>
+    <h1>📺 100 YouTube Screens Simulation</h1>
   </header>
 
-  <main class="flex flex-col items-center py-10">
-    <div id="player-container" class="rounded shadow-lg w-full max-w-4xl aspect-video"></div>
+  <div class="controls">
+    <button onclick="playAll()">▶️ Play All</button>
+    <button onclick="toggleMute()">🔇 Mute / Unmute</button>
+    <button onclick="stopAll()">⏹️ Stop All</button>
+  </div>
 
-    <div class="mt-6 flex space-x-4">
-      <button onclick="skipVideo()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Next</button>
-      <a href="https://www.youtube.com/channel/UC" target="_blank" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow">Subscribe</a>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="text-xl font-semibold mb-2">Withdraw Earnings</h2>
-      <input id="upi" type="text" placeholder="Enter UPI ID" class="border p-2 rounded w-64">
-      <button onclick="withdrawCredits()" class="bg-green-600 text-white px-4 py-2 rounded ml-2 hover:bg-green-700">Withdraw</button>
-      <p id="withdrawMsg" class="mt-3 text-sm text-gray-600"></p>
-    </div>
-  </main>
+  <div class="grid" id="videoGrid"></div>
 
   <script>
-    const videos = [
+    const videoIds = [
       "Ria5YlK2Afo", "aLFMkJaURUI", "hjGgK935eaA", "vr70Upcgl2k",
       "TbvZ7BfhKoE", "rdwoNFwkRF0", "BsyY02ioWrI", "xjxkMiK4igk",
       "8OEAtVMCJUU", "UYqnKDBvYFo"
     ];
-    let currentIndex = 0;
-    let player;
-    let credits = 0;
 
-    function updateWallet() {
-      document.getElementById("wallet").textContent = `Wallet: ₹${credits}`;
-    }
+    const videoGrid = document.getElementById('videoGrid');
+    let players = [];
+    let isMuted = true;
 
-    function onYouTubeIframeAPIReady() {
-      loadVideo();
-    }
-
-    function loadVideo() {
-      const videoId = videos[currentIndex];
-      if (player) {
-        player.loadVideoById(videoId);
-      } else {
-        player = new YT.Player('player-container', {
-          videoId: videoId,
-          playerVars: {
-            autoplay: 1,
-            mute: 1,
-            rel: 0
-          },
-          events: {
-            onStateChange: onPlayerStateChange
-          }
-        });
+    function createVideoFrames() {
+      for (let i = 0; i < 100; i++) {
+        const videoId = videoIds[i % videoIds.length];
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&mute=1`;
+        iframe.id = `player${i}`;
+        iframe.allow = "autoplay; encrypted-media";
+        videoGrid.appendChild(iframe);
       }
     }
 
-    function onPlayerStateChange(event) {
-      // 0 means ended
-      if (event.data === YT.PlayerState.ENDED) {
-        credits += 2;
-        updateWallet();
-        nextVideo(); // auto move to next
+    function playAll() {
+      for (let i = 0; i < 100; i++) {
+        const iframe = document.getElementById(`player${i}`);
+        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
       }
     }
 
-    function skipVideo() {
-      nextVideo(); // move to next video but no credits
-    }
-
-    function nextVideo() {
-      currentIndex = (currentIndex + 1) % videos.length;
-      loadVideo();
-    }
-
-    function withdrawCredits() {
-      const upi = document.getElementById("upi").value;
-      const msg = document.getElementById("withdrawMsg");
-
-      if (!upi) {
-        msg.textContent = "Please enter a valid UPI ID.";
-        return;
+    function stopAll() {
+      for (let i = 0; i < 100; i++) {
+        const iframe = document.getElementById(`player${i}`);
+        iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
       }
-
-      if (credits < 1000) {
-        msg.textContent = "You need at least ₹1000 (1000 credits) to withdraw.";
-        return;
-      }
-
-      msg.textContent = `Withdrawal of ₹${credits} to UPI ID ${upi} initiated (simulated).`;
-      credits = 0;
-      updateWallet();
     }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      const command = isMuted ? "mute" : "unMute";
+      for (let i = 0; i < 100; i++) {
+        const iframe = document.getElementById(`player${i}`);
+        iframe.contentWindow.postMessage(`{"event":"command","func":"${command}","args":""}`, '*');
+      }
+    }
+
+    createVideoFrames();
   </script>
 </body>
 </html>
